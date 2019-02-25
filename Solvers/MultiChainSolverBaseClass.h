@@ -1,0 +1,14 @@
+//
+// Created by burak on 25.02.2019.
+//
+
+#ifndef TSP_SOLVER_MULTICHAINSOLVERBASECLASS_H
+#define TSP_SOLVER_MULTICHAINSOLVERBASECLASS_H
+
+
+class MultiChainSolverBaseClass {
+
+};
+
+
+#endif //TSP_SOLVER_MULTICHAINSOLVERBASECLASS_H

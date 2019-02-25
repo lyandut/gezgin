@@ -11,7 +11,7 @@
 
 struct SolverResult {
     int status;
-    double objective;
+    int objective;
     std::vector<int> *tour;
 };
 
