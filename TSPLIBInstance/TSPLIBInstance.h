@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 class TSPLIBInstance {
 
@@ -26,17 +27,27 @@ public:
 
     int dimension;
     int capacity;
+    std::vector<int> *alternate_depots;
+    std::vector<std::pair<int, int>> *fixed_edges;
+    std::vector<std::pair<int, int>> *edge_list;
+    std::vector<std::pair<int, std::vector<int> *> *> *adj_list;
+    int *demands;
+    int *node_weights;
 
-    float coord1_offset;
-    float coord1_scale;
+    double coord1_offset;
+    double coord1_scale;
 
-    float coord2_offset;
-    float coord2_scale;
+    double coord2_offset;
+    double coord2_scale;
 
-    float coord3_offset;
-    float coord3_scale;
+    double coord3_offset;
+    double coord3_scale;
 
-    TSPLIBInstance(){
+    double **coordinates;
+    double **display_coordinates;
+
+
+    TSPLIBInstance() {
         name = "not specified";
         comment = "not specified";
         instance_type = "TSP";
@@ -59,8 +70,16 @@ public:
         coord3_scale = 1;
 
         display_data_type = "NO_DISPLAY";
-    }
 
+        coordinates = nullptr;
+        alternate_depots = nullptr;
+        demands = nullptr;
+        fixed_edges = nullptr;
+        display_coordinates = nullptr;
+        node_weights = nullptr;
+        edge_list = nullptr;
+        adj_list = nullptr;
+    }
 
 
 };

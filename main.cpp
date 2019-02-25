@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     char *TSPLIB_file = argv[2];
     char *method = argv[1];
 
-    SolverDispatcher::dispatch(TSPLIB_file, method);
+    SolverDispatcherResult *result = SolverDispatcher::dispatch(TSPLIB_file, method);
     return 0;
 }
 

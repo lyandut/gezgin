@@ -4,7 +4,6 @@
 
 #include "LKSolver.h"
 
-std::vector<int> LKSolver::solve(TSPLIBInstance *instance) {
-
-    return std::vector<int>();
+SolverResult *LKSolver::improve(TSPLIBInstance *instance, std::vector<int> *starting_tour) {
+    return nullptr;
 }

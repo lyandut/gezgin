@@ -3,4 +3,4 @@ project(tsp_solver)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(tsp_solver main.cpp TSPLIBInstance/TSPLIBInstance.h TSPLIBInstance/TSPLIBInstanceBuilder.cpp TSPLIBInstance/TSPLIBInstanceBuilder.h Solvers/SolverBaseClass.h Solvers/LK/LKSolver.cpp Solvers/LK/LKSolver.h SolverDispatcher.h)
+add_executable(tsp_solver main.cpp TSPLIBInstance/TSPLIBInstance.h TSPLIBInstance/TSPLIBInstanceBuilder.cpp TSPLIBInstance/TSPLIBInstanceBuilder.h Solvers/SolverBaseClass.h Solvers/LK/LKSolver.cpp Solvers/LK/LKSolver.h SolverDispatcher.h Solvers/Greedy/GreedySolver.cpp Solvers/Greedy/GreedySolver.h)

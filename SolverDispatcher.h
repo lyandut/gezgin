@@ -5,20 +5,40 @@
 #ifndef TSP_SOLVER_SOLVERDISPATCHER_H
 #define TSP_SOLVER_SOLVERDISPATCHER_H
 
+#include <vector>
+#include "Solvers/LK/LKSolver.h"
+
+struct SolverDispatcherResult {
+    int status; //0 is ok, otherwise exception
+    int objective;
+    std::vector<int> *tour;
+};
+
 
 class SolverDispatcher {
 public:
-    static void dispatch(char *filename, char *solver_name) {
-        void SolverDispatcher::dispatch(char *filename, char *solver_name) {
+    static SolverDispatcherResult *dispatch(char *filename, char *solver_name) {
+        auto *tuple = TSPLIBInstanceBuilder::buildFromFile(filename);
 
-            auto * TSPLIB_instance = TSPLIBInstanceBuilder::buildFromFile(filename);
-
-            if(strcmp("linker", solver_name) == 0){
-                auto *lkSolver = new LKSolver();
-                lkSolver->solve(TSPLIB_instance);
-            }
-
+        if(tuple->status != 0){
+            auto *result = new SolverDispatcherResult;
+            result->status = tuple->status;
+            result->objective = -1;
+            result->tour = nullptr;
+            return result;
         }
+
+
+        auto *TSPLIB_instance = tuple->instance;
+
+        if (strcmp("linker", solver_name) == 0) {
+            auto *lkSolver = new LKSolver();
+            //lkSolver->improve(TSPLIB_instance);
+            auto *result = new SolverDispatcherResult;
+            result->status = 0; //success
+        }
+
+        return nullptr;
     }
 };
 

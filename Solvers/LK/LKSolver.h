@@ -8,11 +8,11 @@
 
 #include "../SolverBaseClass.h"
 
-class LKSolver : public SolverBaseClass {
+class LKSolver : public ImprovingSolverBaseClass {
 
 
 public:
-    std::vector<int> solve(TSPLIBInstance *instance) override;
+    SolverResult *improve(TSPLIBInstance *instance, std::vector<int> * starting_tour) override;
 };
 
 

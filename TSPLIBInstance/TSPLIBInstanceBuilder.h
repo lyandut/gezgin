@@ -8,10 +8,15 @@
 
 #include "TSPLIBInstance.h"
 
-class TSPLIBInstanceBuilder {
+struct BuilderResult {
+    int status;
+    TSPLIBInstance *instance;
+};
 
+
+class TSPLIBInstanceBuilder {
 public:
-    static TSPLIBInstance *buildFromFile(char *filename);
+    static BuilderResult *buildFromFile(char *filename);
 
 };
 

@@ -9,9 +9,27 @@
 #include <vector>
 #include "../TSPLIBInstance/TSPLIBInstance.h"
 
+struct SolverResult {
+    int status;
+    double objective;
+    std::vector<int> *tour;
+};
+
 class SolverBaseClass {
+
+private:
+    std::string solver_name;
+};
+
+class ConstructiveSolverBaseClass : public SolverBaseClass {
 public:
-    virtual std::vector<int> solve(TSPLIBInstance *instance) = 0;
+    virtual SolverResult *solve(TSPLIBInstance *instance) = 0;
+
+};
+
+class ImprovingSolverBaseClass : public SolverBaseClass {
+public:
+    virtual SolverResult *improve(TSPLIBInstance *instance, std::vector<int> *starting_route) = 0;
 };
 
 
