@@ -6,9 +6,10 @@
 #define TSP_SOLVER_GREEDYSOLVER_H
 
 
-#include "../SolverBaseClass.h"
+#include "../SingleChainSolverBaseClass.h"
 
-class GreedySolver : ConstructiveSolverBaseClass {
+class GreedySolver : SCConstructiveSolverBaseClass {
+public:
     SolverResult *solve(TSPLIBInstance *instance) override;
 
 };

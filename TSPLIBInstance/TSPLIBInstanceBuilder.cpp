@@ -13,6 +13,7 @@
 #include <cctype>
 #include <locale>
 #include <vector>
+#include <cmath>
 
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
@@ -73,6 +74,13 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
         if (keyword.compare(keyword.length() - 1, 1, ":") == 0) {
             keyword.pop_back();
+        }else{
+            // is either does not exist or waiting
+            str_stream >> std::ws; //eats up white spaces
+            int c = str_stream.peek();
+            if((char)c == ':'){
+                str_stream.get();
+            }
         }
 
         //later better fix this ugly part :/
@@ -121,7 +129,7 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
             int xyz = 0;
             instance->coordinates = new double *[n];
 
-            if (instance->node_coord_type == "TWOD_COORDS") {
+            if (instance->node_coord_type == "TWOD_COORDS" || instance->node_coord_type == "NO_COORDS") {
                 for (int i = 0; i < n; i++) {
                     instance->coordinates[i] = new double[2];
                 }
@@ -142,9 +150,11 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
             for (int i = 0; i < n; i++) {
                 int node_index;
-                str_stream >> node_index;
+                std::getline(file, line);
+                std::stringstream str_stream_2(line);
+                str_stream_2 >> node_index;
                 for (int j = 0; j < xyz; ++j) {
-                    str_stream >> instance->coordinates[node_index][j];
+                    str_stream_2 >> instance->coordinates[node_index - 1][j];
                 }
             }
         } else if (keyword == "DEPOT_SECTION") {
@@ -240,15 +250,172 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
                 instance->adj_list = adj_list;
             }
-        } else if(keyword == "EDGE_WEIGHT_SECTION"){
-            
+        } else if (keyword == "EDGE_WEIGHT_SECTION") {
+            int n = instance->dimension;
+            auto **distance_matrix = new int *[n];
+            for (int i = 0; i < n; ++i) {
+                distance_matrix[i] = new int[n];
+            }
+
+            if (instance->edge_weight_format == "FUNCTION") {
+                std::cerr << "Edge weight format 'function' is not implemented yet " << std::endl;
+            } else if (instance->edge_weight_format == "FULL_MATRIX") {
+                for (int j = 0; j < n; ++j) {
+                    for (int i = 0; i < n; ++i) {
+                        str_stream >> distance_matrix[j][i];
+                    }
+                }
+            } else if (instance->edge_weight_format == "UPPER_ROW") {
+                for (int i = 0; i < n; ++i) {
+                    for (int j = i + 1; j < n; ++j) {
+                        str_stream >> distance_matrix[i][j];
+                        distance_matrix[j][i] = distance_matrix[i][j];
+                    }
+                }
+            } else if (instance->edge_weight_format == "LOWER_ROW") {
+                for (int i = 0; i < n; ++i) {
+                    for (int j = 0; j < i; ++j) {
+                        str_stream >> distance_matrix[i][j];
+                        distance_matrix[j][i] = distance_matrix[i][j];
+                    }
+                }
+            } else if (instance->edge_weight_format == "UPPER_DIAG_ROW") {
+                for (int i = 0; i < n; ++i) {
+                    for (int j = i; j < n; ++j) {
+                        str_stream >> distance_matrix[i][j];
+                        distance_matrix[j][i] = distance_matrix[i][j];
+                    }
+                }
+            } else if (instance->edge_weight_format == "LOWER_DIAG_ROW") {
+                for (int i = 0; i < n; ++i) {
+                    for (int j = 0; j <= i; ++j) {
+                        str_stream >> distance_matrix[i][j];
+                        distance_matrix[j][i] = distance_matrix[i][j];
+                    }
+                }
+            } else if (instance->edge_weight_format == "UPPER_COL") {
+                //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
+                for (int i = 0; i < n; ++i) {
+                    for (int j = i + 1; j < n; ++j) {
+                        str_stream >> distance_matrix[j][i];
+                        distance_matrix[i][j] = distance_matrix[j][i];
+                    }
+                }
+            } else if (instance->edge_weight_format == "LOWER_COL") {
+                //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
+                for (int i = 0; i < n; ++i) {
+                    for (int j = 0; j < i; ++j) {
+                        str_stream >> distance_matrix[j][i];
+                        distance_matrix[i][j] = distance_matrix[j][i];
+                    }
+                }
+            } else if (instance->edge_weight_format == "UPPER_DIAG_COL") {
+                //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
+                for (int i = 0; i < n; ++i) {
+                    for (int j = i; j < n; ++j) {
+                        str_stream >> distance_matrix[j][i];
+                        distance_matrix[i][j] = distance_matrix[j][i];
+                    }
+                }
+            } else if (instance->edge_weight_format == "LOWER_DIAG_COL") {
+                //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
+                for (int i = 0; i < n; ++i) {
+                    for (int j = 0; j <= i; ++j) {
+                        str_stream >> distance_matrix[j][i];
+                        distance_matrix[i][j] = distance_matrix[j][i];
+                    }
+                }
+            } else if (instance->edge_weight_format == "WEIGHT_LIST") {
+                int i, j;
+                str_stream >> i;
+                while (i != -1) {
+                    str_stream >> j;
+                    str_stream >> distance_matrix[i][j];
+                    distance_matrix[j][i] = distance_matrix[i][j];
+                }
+            }
+
+            instance->distance_matrix = distance_matrix;
         }
-
-
     }
 
 
     file.close();
+
+    if (instance->distance_matrix == nullptr) {
+        int n = instance->dimension;
+        instance->distance_matrix = new int *[n];
+        for (int k = 0; k < n; ++k) {
+            instance->distance_matrix[k] = new int[n];
+        }
+
+        if (instance->edge_weight_type == "EUC_2D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    int dist = std::lround(std::sqrt((dx * dx) + (dy * dy)));
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        } else if (instance->edge_weight_type == "EUC_3D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    double dz = instance->coordinates[i][2] - instance->coordinates[j][2];
+                    int dist = std::lround(std::sqrt((dx * dx) + (dy * dy) + (dz * dz)));
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        } else if (instance->edge_weight_type == "MAN_2D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    int dist = std::lround(dx + dy);
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        } else if (instance->edge_weight_type == "MAN_3D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    double dz = instance->coordinates[i][2] - instance->coordinates[j][2];
+                    int dist = std::lround(dx + dy + dz);
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        } else if (instance->edge_weight_type == "MAX_2D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    int dist = std::lround(std::max(dx, dy));
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        } else if (instance->edge_weight_type == "MAX_3D") {
+            for (int i = 0; i < n; ++i) {
+                for (int j = i + 1; j < n; ++j) {
+                    double dx = instance->coordinates[i][0] - instance->coordinates[j][0];
+                    double dy = instance->coordinates[i][1] - instance->coordinates[j][1];
+                    double dz = instance->coordinates[i][2] - instance->coordinates[j][2];
+                    int dist = std::lround(std::max(std::max(dx, dy), dz));
+                    instance->distance_matrix[i][j] = dist;
+                    instance->distance_matrix[j][i] = dist;
+                }
+            }
+        }
+
+
+    }
 
 
     auto *result = new BuilderResult;
@@ -256,8 +423,3 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
     result->instance = instance;
     return result;
 }
-
-
-
-
-

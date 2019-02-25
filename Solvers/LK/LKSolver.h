@@ -6,9 +6,9 @@
 #define TSP_SOLVER_LKSOLVER_H
 
 
-#include "../SolverBaseClass.h"
+#include "../SingleChainSolverBaseClass.h"
 
-class LKSolver : public ImprovingSolverBaseClass {
+class LKSolver : public SCImprovingSolverBaseClass {
 
 
 public:

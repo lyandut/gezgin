@@ -6,8 +6,14 @@
 #define TSP_SOLVER_MATLABVISUALIZER_H
 
 
-class MatlabVisualizer {
+#include "../TSPLIBInstance/TSPLIBInstance.h"
+#include <vector>
 
+class MatlabVisualizer {
+public:
+    static void visualize(TSPLIBInstance *instance);
+
+    static void visualize(TSPLIBInstance *instance, std::vector<int> *tour);
 };
 
 

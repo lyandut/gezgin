@@ -45,7 +45,7 @@ public:
 
     double **coordinates;
     double **display_coordinates;
-
+    int **distance_matrix;
 
     TSPLIBInstance() {
         name = "not specified";
@@ -79,6 +79,7 @@ public:
         node_weights = nullptr;
         edge_list = nullptr;
         adj_list = nullptr;
+        distance_matrix = nullptr;
     }
 
 

@@ -15,19 +15,15 @@ struct SolverResult {
     std::vector<int> *tour;
 };
 
-class SolverBaseClass {
+class SingleChainSolverBaseClass {};
 
-private:
-    std::string solver_name;
-};
-
-class ConstructiveSolverBaseClass : public SolverBaseClass {
+class SCConstructiveSolverBaseClass : public SingleChainSolverBaseClass {
 public:
     virtual SolverResult *solve(TSPLIBInstance *instance) = 0;
 
 };
 
-class ImprovingSolverBaseClass : public SolverBaseClass {
+class SCImprovingSolverBaseClass : public SingleChainSolverBaseClass {
 public:
     virtual SolverResult *improve(TSPLIBInstance *instance, std::vector<int> *starting_route) = 0;
 };
