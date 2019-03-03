@@ -10,17 +10,31 @@
 
 //visualize the instance
 void MatlabVisualizer::visualize(TSPLIBInstance *instance) {
+
+    //check if we can visualize the instance
+    //in order to visualize the instance
+    double **coords;
+    if (instance->display_coordinates != nullptr) {
+        coords = instance->display_coordinates;
+    } else if (instance->coordinates != nullptr) {
+        coords = instance->coordinates;
+    } else {
+        //cannot visualize
+        std::cerr << "Cannot visualize" << std::endl;
+        return;
+    }
+
     //create a matrix n by n
     int n = instance->dimension;
     std::ofstream file_stream("tmp.m");
     file_stream << "x = [ ";
     for (int i = 0; i < n; ++i) {
-        file_stream << instance->coordinates[i][0] << " ";
+        file_stream << coords[i][0] << " ";
     }
     file_stream << "]; " << std::endl;
     file_stream << "y = [ ";
     for (int i = 0; i < n; i++) {
-        file_stream << instance->coordinates[i][1] << " ";
+        file_stream << coords[i][1] << " ";
     }
     file_stream << "]; " << std::endl;
     file_stream << "G = graph(zeros(" << n << "));" << std::endl;
@@ -31,7 +45,7 @@ void MatlabVisualizer::visualize(TSPLIBInstance *instance) {
 }
 
 //visualize the instance and the tour on it
-void MatlabVisualizer::visualize(TSPLIBInstance *instance, std::vector<int> *tour) {
+void MatlabVisualizer::visualize(TSPLIBInstance *instance, std::vector<unsigned int> *tour) {
     int n = instance->dimension;
     std::ofstream file_stream("tmp.m");
     file_stream << "x = [ ";
@@ -52,7 +66,7 @@ void MatlabVisualizer::visualize(TSPLIBInstance *instance, std::vector<int> *tou
     file_stream << "], [ ";
     int i = 0;
     for (int j : *tour) {
-        if(i == 0){
+        if (i == 0) {
             i = 1;
             continue;
         }

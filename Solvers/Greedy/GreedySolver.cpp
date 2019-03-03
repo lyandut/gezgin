@@ -5,17 +5,13 @@
 #include "GreedySolver.h"
 #include <vector>
 
-SolverResult *GreedySolver::solve(TSPLIBInstance *instance) {
-    auto res = new SolverResult;
-
-    int n = instance->dimension;
-
+Solutions *GreedySolver::construct(int **distance_matrix, unsigned int n) {
     int *travelled = new int[n];
     for (int i = 1; i < n; ++i)
         travelled[i] = 0;
     travelled[0] = 1;
 
-    auto tour = new std::vector<int>();
+    auto tour = new std::vector<unsigned int>();
     tour->emplace_back(0);
 
     int total = 1;
@@ -28,24 +24,28 @@ SolverResult *GreedySolver::solve(TSPLIBInstance *instance) {
         for (int i = 0; i < n; ++i) {
             if (i == node || travelled[i] == 1)continue;
             if (min == -1) {
-                min = instance->distance_matrix[node][i];
+                min = distance_matrix[node][i];
                 min_index = i;
-            } else if (min > instance->distance_matrix[node][i]) {
-                min = instance->distance_matrix[node][i];
+            } else if (min > distance_matrix[node][i]) {
+                min = distance_matrix[node][i];
                 min_index = i;
             }
         }
-        objective += instance->distance_matrix[node][min_index];
+        objective += distance_matrix[node][min_index];
         tour->emplace_back(min_index);
         node = min_index;
         total++;
         travelled[node] = 1;
     }
 
-    objective += instance->distance_matrix[min_index][0];
+    objective += distance_matrix[min_index][0];
 
-    res->objective = objective;
-    res->tour = tour;
-    res->status = 0;
-    return res;
+    auto sol = new Solution();
+
+    sol->first = tour;
+    sol->second = objective;
+
+    auto *result= new Solutions();
+    result->emplace_back(sol);
+    return result;
 }

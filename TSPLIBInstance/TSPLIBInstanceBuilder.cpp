@@ -34,7 +34,7 @@ static inline void trim(std::string &s) {
 }
 
 
-static void readStringInside(std::istringstream &str_stream, std::string &str) {
+static void read_string_inside(std::istringstream &str_stream, std::string &str) {
     std::getline(str_stream, str);
     trim(str);
     if (str[0] == ':') {
@@ -44,25 +44,7 @@ static void readStringInside(std::istringstream &str_stream, std::string &str) {
 }
 
 
-//On error buildFromFile method will return nullptr
-//and set the error_no
-BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
-    if (access(filename, R_OK) == -1) {
-        auto *result = new BuilderResult;
-        result->status = 1; //access fail
-        result->instance = nullptr;
-        return result;
-    }
-
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        auto *result = new BuilderResult;
-        result->status = 1; //access fail
-        result->instance = nullptr;
-        return result;
-    }
-
-    auto instance = new TSPLIBInstance();
+static std::string read_specification_part(std::ifstream &file, TSPLIBInstance *instance) {
 
     std::string line;
     std::string keyword;
@@ -74,40 +56,39 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
         if (keyword.compare(keyword.length() - 1, 1, ":") == 0) {
             keyword.pop_back();
-        }else{
+        } else {
             // is either does not exist or waiting
             str_stream >> std::ws; //eats up white spaces
             int c = str_stream.peek();
-            if((char)c == ':'){
+            if ((char) c == ':') {
                 str_stream.get();
             }
         }
 
-        //later better fix this ugly part :/
         if (keyword == "NAME") {
-            readStringInside(str_stream, instance->name);
+            read_string_inside(str_stream, instance->name);
         } else if (keyword == "COMMENT") {
-            readStringInside(str_stream, instance->comment);
+            read_string_inside(str_stream, instance->comment);
         } else if (keyword == "TYPE") {
-            readStringInside(str_stream, instance->instance_type);
+            read_string_inside(str_stream, instance->instance_type);
         } else if (keyword == "DIMENSION") {
             str_stream >> instance->dimension;
         } else if (keyword == "CAPACITY") {
             str_stream >> instance->capacity;
         } else if (keyword == "GRAPH_TYPE") {
-            readStringInside(str_stream, instance->graph_type);
+            read_string_inside(str_stream, instance->graph_type);
         } else if (keyword == "EDGE_TYPE") {
-            readStringInside(str_stream, instance->edge_type);
+            read_string_inside(str_stream, instance->edge_type);
         } else if (keyword == "EDGE_WEIGHT_TYPE") {
-            readStringInside(str_stream, instance->edge_weight_type);
+            read_string_inside(str_stream, instance->edge_weight_type);
         } else if (keyword == "EDGE_WEIGHT_FORMAT") {
-            readStringInside(str_stream, instance->edge_weight_format);
+            read_string_inside(str_stream, instance->edge_weight_format);
         } else if (keyword == "EDGE_DATA_FORMAT") {
-            readStringInside(str_stream, instance->edge_data_format);
+            read_string_inside(str_stream, instance->edge_data_format);
         } else if (keyword == "NODE_TYPE") {
-            readStringInside(str_stream, instance->node_type);
+            read_string_inside(str_stream, instance->node_type);
         } else if (keyword == "NODE_COORD_TYPE") {
-            readStringInside(str_stream, instance->node_coord_type);
+            read_string_inside(str_stream, instance->node_coord_type);
         } else if (keyword == "COORD1_OFFSET") {
             str_stream >> instance->coord1_offset;
         } else if (keyword == "COORD2_OFFSET") {
@@ -121,9 +102,32 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
         } else if (keyword == "COORD3_SCALE") {
             str_stream >> instance->coord3_scale;
         } else if (keyword == "DISPLAY_DATA_TYPE") {
-            readStringInside(str_stream, instance->display_data_type);
+            read_string_inside(str_stream, instance->display_data_type);
+        } else {
+            break;
         }
+    }
 
+    return keyword;
+}
+
+//On error buildFromFile method will return nullptr
+//and set the error_no
+TSPLIBInstance *TSPLIBInstanceBuilder::buildFromFile(const char *filename) {
+    if (access(filename, R_OK) == -1) {
+        return nullptr;
+    }
+
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        return nullptr;
+    }
+
+    auto instance = new TSPLIBInstance();
+
+    std::string keyword = read_specification_part(file, instance);
+    std::string line;
+    while (!file.eof()) {
         if (keyword == "NODE_COORD_SECTION") {
             int n = instance->dimension;
             int xyz = 0;
@@ -141,11 +145,8 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
                 xyz = 3;
             } else {
                 //NODE_COORD_SECTION started however node_coord_type is NO_COORDS
-                auto *result = new BuilderResult;
-                result->status = 2; //Inconsistent attributes
-                result->instance = nullptr;
+                return nullptr;
                 file.close();
-                return result;
             }
 
             for (int i = 0; i < n; i++) {
@@ -160,10 +161,10 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
         } else if (keyword == "DEPOT_SECTION") {
             auto alternate_depots = new std::vector<int>();
             int i;
-            str_stream >> i;
+            file >> i;
             while (i != -1) {
                 alternate_depots->push_back(i);
-                str_stream >> i;
+                file >> i;
             }
 
             instance->alternate_depots = alternate_depots;
@@ -172,17 +173,17 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
             instance->demands = new int[n];
             for (int i = 0; i < n; ++i) {
                 int node_index;
-                str_stream >> node_index;
-                str_stream >> instance->demands[node_index];
+                file >> node_index;
+                file >> instance->demands[node_index];
             }
         } else if (keyword == "FIXED_EDGES_SECTION") {
             auto pairs = new std::vector<std::pair<int, int>>();
             int i, j;
-            str_stream >> i;
+            file >> i;
             while (i != -1) {
-                str_stream >> j;
+                file >> j;
                 pairs->emplace_back(i, j);
-                str_stream >> i;
+                file >> i;
             }
             instance->fixed_edges = pairs;
         } else if (keyword == "DISPLAY_DATA_SECTION") {
@@ -194,30 +195,30 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
             for (int i = 0; i < n; i++) {
                 int node_index;
-                str_stream >> node_index;
-                str_stream >> instance->display_coordinates[node_index][0];
-                str_stream >> instance->display_coordinates[node_index][1];
+                file >> node_index;
+                file >> instance->display_coordinates[node_index - 1][0];
+                file >> instance->display_coordinates[node_index - 1][1];
             }
         } else if (keyword == "NODE_WEIGHT_SECTION") {
             int i, j;
             int n = instance->dimension;
             int *node_weights = new int[n];
-            str_stream >> i;
+            file >> i;
             while (i != -1) {
-                str_stream >> j;
+                file >> j;
                 node_weights[i] = j;
-                str_stream >> i;
+                file >> i;
             }
             instance->node_weights = node_weights;
         } else if (keyword == "TOUR_SECTION") {
             auto tours = new std::vector<std::vector<int> *>();
             int i;
-            str_stream >> i;
+            file >> i;
             while (i != -1) {
                 auto tour = new std::vector<int>();
                 while (i != -1) {
                     tour->push_back(i);
-                    str_stream >> i;
+                    file >> i;
                 }
                 tours->push_back(tour);
             }
@@ -225,27 +226,27 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
             if (instance->edge_data_format == "EDGE_LIST") {
                 auto edge_list = new std::vector<std::pair<int, int>>();
                 int i, j;
-                str_stream >> i;
+                file >> i;
                 while (i != -1) {
-                    str_stream >> j;
+                    file >> j;
                     edge_list->emplace_back(i, j);
-                    str_stream >> i;
+                    file >> i;
                 }
                 instance->edge_list = edge_list;
             } else if (instance->edge_data_format == "ADJ_LIST") {
                 auto adj_list = new std::vector<std::pair<int, std::vector<int> *> *>();
                 int i;
-                str_stream >> i;
+                file >> i;
                 while (i != -1) {
                     int node_index = i;
                     auto adjacency_list = new std::vector<int>();
-                    str_stream >> i;
+                    file >> i;
                     while (i != -1) {
                         adjacency_list->push_back(i);
-                        str_stream >> i;
+                        file >> i;
                     }
                     adj_list->push_back(new std::pair<int, std::vector<int> *>(node_index, adjacency_list));
-                    str_stream >> i;
+                    file >> i;
                 }
 
                 instance->adj_list = adj_list;
@@ -262,34 +263,34 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
             } else if (instance->edge_weight_format == "FULL_MATRIX") {
                 for (int j = 0; j < n; ++j) {
                     for (int i = 0; i < n; ++i) {
-                        str_stream >> distance_matrix[j][i];
+                        file >> distance_matrix[j][i];
                     }
                 }
             } else if (instance->edge_weight_format == "UPPER_ROW") {
                 for (int i = 0; i < n; ++i) {
                     for (int j = i + 1; j < n; ++j) {
-                        str_stream >> distance_matrix[i][j];
+                        file >> distance_matrix[i][j];
                         distance_matrix[j][i] = distance_matrix[i][j];
                     }
                 }
             } else if (instance->edge_weight_format == "LOWER_ROW") {
                 for (int i = 0; i < n; ++i) {
                     for (int j = 0; j < i; ++j) {
-                        str_stream >> distance_matrix[i][j];
+                        file >> distance_matrix[i][j];
                         distance_matrix[j][i] = distance_matrix[i][j];
                     }
                 }
             } else if (instance->edge_weight_format == "UPPER_DIAG_ROW") {
                 for (int i = 0; i < n; ++i) {
                     for (int j = i; j < n; ++j) {
-                        str_stream >> distance_matrix[i][j];
+                        file >> distance_matrix[i][j];
                         distance_matrix[j][i] = distance_matrix[i][j];
                     }
                 }
             } else if (instance->edge_weight_format == "LOWER_DIAG_ROW") {
                 for (int i = 0; i < n; ++i) {
                     for (int j = 0; j <= i; ++j) {
-                        str_stream >> distance_matrix[i][j];
+                        file >> distance_matrix[i][j];
                         distance_matrix[j][i] = distance_matrix[i][j];
                     }
                 }
@@ -297,7 +298,7 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
                 //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
                 for (int i = 0; i < n; ++i) {
                     for (int j = i + 1; j < n; ++j) {
-                        str_stream >> distance_matrix[j][i];
+                        file >> distance_matrix[j][i];
                         distance_matrix[i][j] = distance_matrix[j][i];
                     }
                 }
@@ -305,7 +306,7 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
                 //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
                 for (int i = 0; i < n; ++i) {
                     for (int j = 0; j < i; ++j) {
-                        str_stream >> distance_matrix[j][i];
+                        file >> distance_matrix[j][i];
                         distance_matrix[i][j] = distance_matrix[j][i];
                     }
                 }
@@ -313,7 +314,7 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
                 //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
                 for (int i = 0; i < n; ++i) {
                     for (int j = i; j < n; ++j) {
-                        str_stream >> distance_matrix[j][i];
+                        file >> distance_matrix[j][i];
                         distance_matrix[i][j] = distance_matrix[j][i];
                     }
                 }
@@ -321,22 +322,25 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
                 //HEY WHY NOT WASTE SPATIAL LOCALITY AND THRASH OUR CACHE
                 for (int i = 0; i < n; ++i) {
                     for (int j = 0; j <= i; ++j) {
-                        str_stream >> distance_matrix[j][i];
+                        file >> distance_matrix[j][i];
                         distance_matrix[i][j] = distance_matrix[j][i];
                     }
                 }
             } else if (instance->edge_weight_format == "WEIGHT_LIST") {
                 int i, j;
-                str_stream >> i;
+                file >> i;
                 while (i != -1) {
-                    str_stream >> j;
-                    str_stream >> distance_matrix[i][j];
+                    file >> j;
+                    file >> distance_matrix[i][j];
                     distance_matrix[j][i] = distance_matrix[i][j];
                 }
             }
 
             instance->distance_matrix = distance_matrix;
         }
+
+        if (!file.eof())
+            file >> keyword;
     }
 
 
@@ -417,9 +421,5 @@ BuilderResult *TSPLIBInstanceBuilder::buildFromFile(char *filename) {
 
     }
 
-
-    auto *result = new BuilderResult;
-    result->status = 0; //success
-    result->instance = instance;
-    return result;
+    return instance;
 }

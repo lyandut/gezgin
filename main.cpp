@@ -4,6 +4,9 @@
 #include "TSPLIBInstance/TSPLIBInstanceBuilder.h"
 #include "SolverDispatcher.h"
 #include "Visualize/MatlabVisualizer.h"
+#include "Solvers/NGreedy/NGreedySolver.h"
+#include <fstream>
+#include <iostream>
 
 void usage();
 
@@ -25,12 +28,17 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    char *TSPLIB_file = argv[2];
-    char *method = argv[1];
+    char *file = argv[argc - 1];
+    auto methods = new std::vector<std::string>();
 
-    SolverDispatcherResult *result = SolverDispatcher::dispatch(TSPLIB_file, method);
-    MatlabVisualizer::visualize(result->instance, result->tour);
+    for (int i = 1; i < argc - 1; ++i) {
+        methods->push_back(argv[i]);
+    }
 
+    SolverDispatcher::dispatch(file, methods);
+
+
+    delete methods;
     return 0;
 }
 
@@ -38,7 +46,8 @@ int main(int argc, char **argv) {
 void usage() {
     std::cout << "tsp_solver is a program that is designed to solve TSPLIB instances" << std::endl << std::endl;
 
-    std::cout << "In order to run the program, a TSPLIB directory and one or more method name must be specified" << std::endl;
+    std::cout << "In order to run the program, a TSPLIB directory and one or more method name must be specified"
+              << std::endl;
     std::cout << "First method must be construction heuristic" << std::endl;
     std::cout << "Other methods must be improvements heuristic" << std::endl;
 
@@ -52,11 +61,11 @@ void usage() {
     std::cout << "To see the available methods, 'tsp_solver methods'" << std::endl;
 }
 
-void methods(){
+void methods() {
     std::cout << "Available methods are:" << std::endl;
     std::cout << "  Available construction heuristics:" << std::endl;
-    std::cout << "      greedy"<< std::endl << std::endl;
+    std::cout << "      greedy" << std::endl << std::endl;
 
     std::cout << "  Available improvement heuristics:" << std::endl;
-    std::cout << "      2opt"<< std::endl;
+    std::cout << "      2opt" << std::endl;
 }

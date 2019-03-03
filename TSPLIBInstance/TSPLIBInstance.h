@@ -25,7 +25,7 @@ public:
     std::string node_coord_type;
     std::string display_data_type;
 
-    int dimension;
+    unsigned int dimension;
     int capacity;
     std::vector<int> *alternate_depots;
     std::vector<std::pair<int, int>> *fixed_edges;
@@ -80,6 +80,43 @@ public:
         edge_list = nullptr;
         adj_list = nullptr;
         distance_matrix = nullptr;
+    }
+
+
+    ~TSPLIBInstance() {
+        if (coordinates != nullptr) {
+            for (int i = 0; i < dimension; ++i) {
+                delete[] coordinates[i];
+            }
+            delete[] coordinates;
+        }
+        delete alternate_depots;
+        delete[] demands;
+        delete fixed_edges;
+        if (display_coordinates != nullptr) {
+            for (int i = 0; i < dimension; ++i) {
+                delete[] display_coordinates[i];
+            }
+            delete[] display_coordinates;
+        }
+        delete[] node_weights;
+        delete edge_list;
+
+        if (adj_list != nullptr) {
+            for (auto item : *adj_list) {
+                delete item->second;
+                delete item;
+            }
+            delete adj_list;
+        }
+
+        if (distance_matrix != nullptr) {
+            for (int i = 0; i < dimension; ++i) {
+                delete[] distance_matrix[i];
+            }
+            delete[] distance_matrix;
+        }
+
     }
 
 

@@ -6,11 +6,11 @@
 #define TSP_SOLVER_GREEDYSOLVER_H
 
 
-#include "../SingleChainSolverBaseClass.h"
+#include "../ConstructionHeuristic.h"
 
-class GreedySolver : SCConstructiveSolverBaseClass {
+class GreedySolver : public ConstructionHeuristic {
 public:
-    SolverResult *solve(TSPLIBInstance *instance) override;
+    Solutions *construct(int **distance_matrix, unsigned int n) override;
 
 };
 

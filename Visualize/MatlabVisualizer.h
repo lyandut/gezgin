@@ -13,7 +13,7 @@ class MatlabVisualizer {
 public:
     static void visualize(TSPLIBInstance *instance);
 
-    static void visualize(TSPLIBInstance *instance, std::vector<int> *tour);
+    static void visualize(TSPLIBInstance *instance, std::vector<unsigned int> *tour);
 };
 
 
